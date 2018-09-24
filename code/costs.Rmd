@@ -20,7 +20,7 @@ setwd("~/GitHub/SporeCost")
 require("seqinr")
 ```
 
-# Cost at the gene level following Lynch and Marinov (2015)
+# I. Cost at the gene level following Lynch and Marinov (2015)
 
 ```{r}
 # Plasmid = https://www.ncbi.nlm.nih.gov/nuccore/CP020103, 84,215 bp
@@ -54,7 +54,6 @@ chrom.genome <- sum(chrom.A, chrom.C, chrom.G, chrom.T)
 # 1) Costs of nucelotide synthesis
 
 ```{r}
-
 # 1) Nucleotide synthesis: convert genomic info above into costs of biosynthesizing new nucelotides
 # Treat costs in units of phosphate bonds hydrolyzed, denoted as P
 
@@ -115,3 +114,35 @@ total.gene.cost <- genome.synth.P + genome.unwind + Okazaki.cost
 # Maybe just assume a dNTP cost of 50
 ```
 
+# II. Cost at the transcriptional level following Lynch and Marinov (2015)
+
+# 1) Costs of ribonucleotide synthesis
+
+```{r}
+# Load data
+
+# First, get lengths of genes in B. subtilis: http://www.subtiwiki.uni-goettingen.de/v3/gene/batch (Lr,mat)
+bs.gene.lengths <- read.table("data/transcription/gene.length.txt", sep = "\t", header=TRUE)
+
+# Second, get expression data here: http://sporeweb.molgenrug.nl/
+veg.transcript <- read.table("data/transcription/1.vegetative.txt", sep = "\t", header=TRUE)
+
+# Merge data sets based on "Genes""
+veg <- merge(x = veg.transcript, y = bs.gene.lengths, by.x = "Gene", by.y = "Gene")
+
+# Check merger with "LocusTag"
+veg$LocusTag.x = veg$LocusTag.y
+
+# Take average expression for each gene (row) from t = 0 - t = 8
+mean.veg <- apply(veg[5:12], 1, mean, na.rm = TRUE)
+
+# Multiply average expression by gene length
+veg.synth.gene <- mean.veg * veg$Length
+
+Ribo.cost <- 48 # P units
+
+Ribo.cost.total <- Ribo.cost * sum(veg.synth.gene)
+
+# 2.3 x 10^7 P during vegetative state
+
+```
