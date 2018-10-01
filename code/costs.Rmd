@@ -18,6 +18,7 @@ rm(list = ls())
 getwd()
 setwd("~/GitHub/SporeCost")
 require("seqinr")
+require("ape")
 ```
 
 # I. Cost at the gene level following Lynch and Marinov (2015)
@@ -25,30 +26,27 @@ require("seqinr")
 ```{r}
 # Plasmid = https://www.ncbi.nlm.nih.gov/nuccore/CP020103, 84,215 bp
 
-plasmid.raw <- read.fasta(file = "data/replication/Bs3610plasmid.fa")
-length(plasmid.raw) # should be 1 sequence
+plasmid.raw <- read.GenBank("CP020103.1", as.character = TRUE)
 plasmid <- plasmid.raw[[1]]
-plasmid.nucleotides <- count(plasmid,1)
-plasmid.GC <- GC(plasmid)
-plasmid.A <- plasmid.nucleotides[1]
-plasmid.C <- plasmid.nucleotides[2]
-plasmid.G <- plasmid.nucleotides[3]
-plasmid.T <- plasmid.nucleotides[4]
-plasmid.genome <- sum(plasmid.A, plasmid.C, plasmid.G, plasmid.T)
+plasmid.size <- length(plasmid)
+plasmid.A <- length(plasmid[which(plasmid == "a")])
+plasmid.C <- length(plasmid[which(plasmid == "c")])
+plasmid.G <- length(plasmid[which(plasmid == "g")])
+plasmid.T <- length(plasmid[which(plasmid == "t")])
+sum(plasmid.A, plasmid.C, plasmid.G, plasmid.T) == plasmid.size
 ```
 
 ```{r}
 # Chromosome = https://www.ncbi.nlm.nih.gov/nuccore/CP020102, 4,215,607 bp
-chrom.raw <- read.fasta(file = "data/replication/Bs3610chromosome.fa")
-length(chrom.raw) # should be 1 sequence
-chrom <- chrom.raw[[1]]
-chrom.nucleotides <- count(chrom,1)
-chrom.GC <- GC(chrom)
-chrom.A <- chrom.nucleotides[1]
-chrom.C <- chrom.nucleotides[2]
-chrom.G <- chrom.nucleotides[3]
-chrom.T <- chrom.nucleotides[4]
-chrom.genome <- sum(chrom.A, chrom.C, chrom.G, chrom.T)
+
+chromo.raw <- read.GenBank("CP020102.1", as.character = TRUE)
+chromo <- chromo.raw[[1]]
+chromo.size <- length(chromo)
+chromo.A <- length(chromo[which(chromo == "a")])
+chromo.C <- length(chromo[which(chromo == "c")])
+chromo.G <- length(chromo[which(chromo == "g")])
+chromo.T <- length(chromo[which(chromo == "t")])
+sum(chromo.A, chromo.C, chromo.G, chromo.T) == chromo.size
 ```
 
 # 1) Costs of nucelotide synthesis
@@ -63,8 +61,8 @@ dGTP <- 52.7
 dTTP <- 47.7
 
 plasmid.synth.P <- 2 * sum((dATP*plasmid.A), (dCTP*plasmid.C), (dGTP*plasmid.G), (dTTP*plasmid.T))
-chrom.synth.P <- 2 * sum((dATP*chrom.A), (dCTP*chrom.C), (dGTP*chrom.G), (dTTP*chrom.T))
-genome.synth.P <- plasmid.synth.P + chrom.synth.P
+chromo.synth.P <- 2 * sum((dATP*chromo.A), (dCTP*chromo.C), (dGTP*chromo.G), (dTTP*chromo.T))
+genome.synth.P <- plasmid.synth.P + chromo.synth.P
 # plasmid is ~2 % of total genome cost
 ```
 
@@ -72,9 +70,9 @@ genome.synth.P <- plasmid.synth.P + chrom.synth.P
 
 ```{r}
 # Mostly helicase activity
-plasmid.unwind <- plasmid.genome * 1 # where 1 = one P?
-chrom.unwind <- chrom.genome * 1
-genome.unwind <- plasmid.unwind + chrom.unwind
+plasmid.unwind <- plasmid.size * 1 # where 1 = one P?
+chromo.unwind <- chromo.size * 1
+genome.unwind <- plasmid.unwind + chromo.unwind
 # unwinding is ~1 % of nucleotide synthesis cost
 ```
 
@@ -85,9 +83,9 @@ genome.unwind <- plasmid.unwind + chrom.unwind
 Lp <- 10 # RNA primer length, bp
 Lof <- 1500 # mean length of Okazaki fragment
 rib.P <- 48 # number of ATP equivalents per ribonucleotide
-Okazaki.cost.plasmid <- (rib.P * Lp * plasmid.genome) / Lof
-Okazaki.cost.chrom <- (rib.P * Lp * chrom.genome) / Lof
-Okazaki.cost <- Okazaki.cost.plasmid + Okazaki.cost.chrom
+Okazaki.cost.plasmid <- (rib.P * Lp * plasmid.size) / Lof
+Okazaki.cost.chromo <- (rib.P * Lp * chromo.size) / Lof
+Okazaki.cost <- Okazaki.cost.plasmid + Okazaki.cost.chromo
 # Chain elongation ~0.3 % of nucleotide synthesis cost
 ```
 
